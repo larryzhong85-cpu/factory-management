@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  username    String   @unique
+  password    String
+  displayName String
+  role        String   @default("admin")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Product {
+  id           Int      @id @default(autoincrement())
+  modelName    String   @unique
+  category     String
+  functionType String?
+  aliasNames   String   @default("[]")
+  shortCode    String?
+  description  String?
+  sizeMin      Int      @default(6)
+  sizeMax      Int      @default(40)
+  sizeStep     Int      @default(2)
+  commonSizes  String   @default("[10,12,14,16,18,20]")
+  priceFormula String?
+  hasExtra     Boolean  @default(false)
+  extraPart    String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orderItems        OrderItem[]
+  customerPrices    CustomerPrice[]
+  customerPackaging CustomerPackaging[]
+  inventory         Inventory[]
+  drumInventory     DrumInventory[]
+}
+
+model Customer {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  level           String   @default("普通")
+  contactPerson   String?
+  phone           String?
+  address         String?
+  firstOrderDate  DateTime?
+  lastOrderDate   DateTime?
+  totalOrders     Int      @default(0)
+  status          String   @default("活跃")
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  packagingPreferences CustomerPackaging[]
+  prices               CustomerPrice[]
+  orders               Order[]
+}
+
+model CustomerPackaging {
+  id                 Int    @id @default(autoincrement())
+  customerId         Int
+  productId          Int
+  outerBox           String?
+  innerBag           String?
+  piecesPerBox       Int    @default(20)
+  labelRequirement   String?
+  packingRequirement String?
+  hasScrews          Boolean @default(false)
+  notes              String?
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+
+  @@unique([customerId, productId])
+}
+
+model CustomerPrice {
+  id            Int      @id @default(autoincrement())
+  customerId    Int
+  productId     Int
+  sizeInch      Int
+  unitPrice     Float
+  effectiveDate DateTime @default(now())
+  notes         String?
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+
+  @@unique([customerId, productId, sizeInch])
+}
+
+model Order {
+  id           Int      @id @default(autoincrement())
+  orderNo      String   @unique
+  customerId   Int
+  customerType String   @default("老客户")
+  orderDate    DateTime
+  entryDate    DateTime @default(now())
+  status       String   @default("新订单")
+  totalPieces  Int      @default(0)
+  totalPairs   Int      @default(0)
+  notes        String?
+  feishuUrl    String?
+  archivedAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customer  Customer    @relation(fields: [customerId], references: [id])
+  items     OrderItem[]
+  shipments Shipment[]
+}
+
+model OrderItem {
+  id                 Int    @id @default(autoincrement())
+  orderId            Int
+  productId          Int
+  actualProductId    Int?
+  labelProductId     Int?
+  piecesPerBox       Int    @default(20)
+  outerBox           String?
+  innerBag           String?
+  labelRequirement   String?
+  packingRequirement String?
+  notes              String?
+
+  order       Order             @relation(fields: [orderId], references: [id])
+  product     Product           @relation(fields: [productId], references: [id])
+  sizeDetails OrderSizeDetail[]
+}
+
+model OrderSizeDetail {
+  id          Int @id @default(autoincrement())
+  orderItemId Int
+  sizeInch    Int
+  pieces      Int
+  pairs       Int
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+}
+
+model Shipment {
+  id             Int      @id @default(autoincrement())
+  orderId        Int
+  shipDate       DateTime
+  piecesShipped  Int
+  shipType       String
+  deliveryNoteNo String?
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+}
+
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  contact   String?
+  phone     String?
+  address   String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  materials Material[]
+}
+
+model Material {
+  id           Int      @id @default(autoincrement())
+  materialCode String   @unique
+  name         String
+  category     String
+  subCategory  String?
+  unit         String   @default("件")
+  spec         String?
+  brand        String?
+  price        Float?
+  supplierId   Int?
+  attributes   String?  @default("{}")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  inventory Inventory[]
+  supplier  Supplier? @relation(fields: [supplierId], references: [id])
+}
+
+model DrumCapacityRule {
+  id                Int      @id @default(autoincrement())
+  sizeInch          Int      @unique
+  capacityPerBarrel Int
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Inventory {
+  id            Int      @id @default(autoincrement())
+  itemType      String
+  productId     Int?
+  materialId    Int?
+  itemName      String
+  sizeInch      Int?
+  brand         String?
+  quantity      Int      @default(0)
+  unit          String   @default("件")
+  safeStock     Int      @default(0)
+  warnThreshold Int?
+  status        String   @default("充足")
+  lastInDate    DateTime?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  product  Product?  @relation(fields: [productId], references: [id])
+  material Material? @relation(fields: [materialId], references: [id])
+  logs     InventoryLog[]
+}
+
+model InventoryLog {
+  id              Int      @id @default(autoincrement())
+  inventoryId     Int
+  changeType      String
+  quantityChange  Int
+  beforeQty       Int
+  afterQty        Int
+  relatedOrderNo  String?
+  operator        String
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id])
+}
+
+model DrumInventory {
+  id                Int      @id @default(autoincrement())
+  productId         Int
+  sizeInch          Int
+  currentBarrels    Int      @default(0)
+  capacityPerBarrel Int      @default(0)
+  totalPieces       Int      @default(0)
+  status            String   @default("充足")
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([productId, sizeInch])
+}
+
+model LabelInventory {
+  id            Int      @id @default(autoincrement())
+  brand         String   @unique
+  currentStock  Int      @default(0)
+  safeStock     Int      @default(0)
+  onOrder       Int      @default(0)
+  status        String   @default("充足")
+  lastOrderDate DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SystemLog {
+  id             Int      @id @default(autoincrement())
+  actionType     String
+  actionDetail   String?
+  operator       String
+  relatedOrderNo String?
+  result         String   @default("成功")
+  errorMsg       String?
+  createdAt      DateTime @default(now())
+}

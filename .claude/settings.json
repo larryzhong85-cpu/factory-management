@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:*)",
+      "Bash(open http://*)",
+      "Bash(lsof *)"
+    ]
+  }
+}
