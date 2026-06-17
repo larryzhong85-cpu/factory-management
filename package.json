@@ -19,6 +19,7 @@
     "antd": "^6.4.3",
     "bcryptjs": "^3.0.3",
     "dayjs": "^1.11.21",
+    "jose": "^6.2.3",
     "jsonwebtoken": "^9.0.3",
     "next": "16.2.7",
     "playwright": "^1.60.0",

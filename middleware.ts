@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { verifyTokenEdge } from '@/lib/auth-edge'
 
 const publicPaths = ['/login', '/api/auth/login']
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // 允许公开路径
@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
       request.cookies.get('auth_token')?.value ||
       request.headers.get('authorization')?.replace('Bearer ', '')
 
-    if (!token || !verifyToken(token)) {
+    if (!token || !(await verifyTokenEdge(token))) {
       return NextResponse.json(
         { success: false, error: '未登录或登录已过期' },
         { status: 401 }
