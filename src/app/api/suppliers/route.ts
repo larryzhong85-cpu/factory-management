@@ -3,12 +3,19 @@ import prisma from '@/lib/prisma'
 import { getCurrentUser, canWrite } from '@/lib/auth'
 
 // GET /api/suppliers
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const includeMaterials = searchParams.get('includeMaterials') === 'true'
+
     const suppliers = await prisma.supplier.findMany({
       where: { isActive: true },
+      include: includeMaterials ? {
+        materials: { select: { id: true, name: true, materialCode: true, category: true, subCategory: true, unit: true, brand: true } },
+      } : { _count: { select: { materials: true } } },
       orderBy: { name: 'asc' },
     })
+
     return NextResponse.json({ success: true, data: suppliers })
   } catch (error) {
     console.error('Suppliers GET error:', error)

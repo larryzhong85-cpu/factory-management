@@ -16,6 +16,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UnorderedListOutlined,
+  TeamOutlined,
 } from '@ant-design/icons'
 import { useRouter, usePathname } from 'next/navigation'
 import { api } from '@/lib/api'
@@ -50,6 +51,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       label: '物料基础信息',
       children: [
         { key: '/materials', icon: <UnorderedListOutlined />, label: <Link href="/materials">物料管理</Link> },
+        { key: '/suppliers', icon: <TeamOutlined />, label: <Link href="/suppliers">供应商管理</Link> },
       ],
     },
     {
